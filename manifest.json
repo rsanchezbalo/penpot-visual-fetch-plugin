@@ -1,0 +1,9 @@
+{
+  "name": "Penpot Visual Fetch",
+  "description": "Paste any web element directly into Penpot as editable layers.",
+  "plugin-id": "penpot-visual-fetch",
+  "host": "http://localhost:7654",
+  "code": "plugin.js",
+  "icon": "icon.png",
+  "permissions": ["content:read", "content:write", "allow:downloads"]
+}
