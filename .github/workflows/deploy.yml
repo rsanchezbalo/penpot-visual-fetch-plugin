@@ -33,17 +33,17 @@ jobs:
 
       - name: Build dist
         run: |
-          BASE="https://rsanchezbalo.github.io/penpot-visual-fetch-plugin"
+          REPO="/penpot-visual-fetch-plugin"
           mkdir dist
           cp icon.png dist/
           cp node_modules/@penpot/plugin-styles/styles.css dist/styles.css
           sed 's|/node_modules/@penpot/plugin-styles/styles.css|./styles.css|g' index.html > dist/index.html
           sed \
             -e 's|"host": "http://localhost:7654",||g' \
-            -e "s|\"code\": \"plugin.js\"|\"code\": \"${BASE}/plugin.js\"|g" \
-            -e "s|\"icon\": \"icon.png\"|\"icon\": \"${BASE}/icon.png\"|g" \
+            -e "s|\"code\": \"plugin.js\"|\"code\": \"${REPO}/plugin.js\"|g" \
+            -e "s|\"icon\": \"icon.png\"|\"icon\": \"${REPO}/icon.png\"|g" \
             manifest.json > dist/manifest.json
-          sed "s|penpot.ui.open(\"Penpot Visual Fetch\", \"index.html\"|penpot.ui.open(\"Penpot Visual Fetch\", \"${BASE}/index.html\"|g" plugin.js > dist/plugin.js
+          sed "s|penpot.ui.open(\"Penpot Visual Fetch\", \"index.html\"|penpot.ui.open(\"Penpot Visual Fetch\", \"https://rsanchezbalo.github.io${REPO}/index.html\"|g" plugin.js > dist/plugin.js
 
       - uses: actions/configure-pages@v5
 
