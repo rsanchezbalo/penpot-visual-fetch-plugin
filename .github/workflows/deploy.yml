@@ -41,6 +41,7 @@ jobs:
           sed \
             -e 's|"host": "http://localhost:7654",||g' \
             -e "s|\"code\": \"plugin.js\"|\"code\": \"${BASE}/plugin.js\"|g" \
+            -e "s|\"icon\": \"icon.png\"|\"icon\": \"${BASE}/icon.png\"|g" \
             manifest.json > dist/manifest.json
           sed "s|penpot.ui.open(\"Penpot Visual Fetch\", \"index.html\"|penpot.ui.open(\"Penpot Visual Fetch\", \"${BASE}/index.html\"|g" plugin.js > dist/plugin.js
 
