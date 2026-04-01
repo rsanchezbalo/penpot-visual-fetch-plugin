@@ -887,6 +887,64 @@ async function buildShape(node, parent, offsetX, offsetY) {
 
   // ── Image ────────────────────────────────────────────────────────────────────
   if (kind === "image") {
+    // SVG images: Penpot cannot render SVGs as fillImage — use createShapeFromSvgWithImages instead
+    const isSvgSrc =
+      node.src &&
+      (/\.svg(?:[?#]|$)/i.test(node.src) ||
+        node.src.startsWith("data:image/svg+xml"));
+    if (isSvgSrc) {
+      try {
+        let svgContent = node.svgContent; // may be pre-fetched by the extension
+        if (!svgContent && node.src) {
+          if (node.src.startsWith("data:image/svg+xml")) {
+            const comma = node.src.indexOf(",");
+            if (comma !== -1) {
+              const header = node.src.slice(0, comma);
+              if (header.includes("base64")) {
+                svgContent = atob(node.src.slice(comma + 1));
+              } else {
+                svgContent = decodeURIComponent(node.src.slice(comma + 1));
+              }
+            }
+          } else {
+            const resp = await fetch(node.src);
+            if (resp.ok) svgContent = await resp.text();
+          }
+        }
+        if (svgContent && svgContent.includes("<svg")) {
+          console.log(
+            `[DBG] SVG image: calling createShapeFromSvgWithImages, svgLen=${svgContent.length}`,
+          );
+          const timeout = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("svg image timeout")), 10000),
+          );
+          const svgShape = await Promise.race([
+            penpot.createShapeFromSvgWithImages(svgContent),
+            timeout,
+          ]);
+          if (svgShape) {
+            svgShape.name = node.name || "SVG";
+            svgShape.x = (node.x || 0) + offsetX;
+            svgShape.y = (node.y || 0) + offsetY;
+            if (node.w || node.h)
+              svgShape.resize(
+                Math.max(1, node.w || svgShape.width),
+                Math.max(1, node.h || svgShape.height),
+              );
+            applyCommonStyles(svgShape, node);
+            appendToParent(parent, svgShape);
+            applyLayoutChildSizing(svgShape, node.layoutChild);
+            return svgShape;
+          }
+        }
+      } catch (e) {
+        console.warn(
+          `[PenpotVF] SVG image handling failed, falling back to rect:`,
+          e.message,
+        );
+      }
+    }
+
     const shape = penpot.createRectangle();
     shape.name = node.name || "Image";
     shape.x = (node.x || 0) + offsetX;
