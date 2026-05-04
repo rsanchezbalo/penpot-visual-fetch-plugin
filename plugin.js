@@ -330,12 +330,18 @@ function findFont(rawName) {
 
   const lower = name.toLowerCase();
 
+  // Spread into a real JS array so .find() returns a properly proxied font
+  // object (penpot.fonts.all is a ClojureScript lazy-seq in newer Penpot
+  // versions; iterating it directly yields raw CLJS maps whose .fontId is
+  // undefined, causing "stream expected" errors in the fontId setter).
+  const allFonts = [...penpot.fonts.all];
+
   // 2. Case-insensitive match on font name
-  const ciName = penpot.fonts.all.find((f) => f.name.toLowerCase() === lower);
+  const ciName = allFonts.find((f) => f.name.toLowerCase() === lower);
   if (ciName) return ciName;
 
   // 3. Case-insensitive match on fontFamily field
-  const ciFamily = penpot.fonts.all.find(
+  const ciFamily = allFonts.find(
     (f) => f.fontFamily.toLowerCase() === lower,
   );
   if (ciFamily) return ciFamily;
