@@ -438,9 +438,12 @@ function applyTextFontAndColor(shape, textItem) {
   if (textItem.letterSpacing !== undefined && textItem.letterSpacing !== null) {
     const originalLS = Number(textItem.letterSpacing);
     const ls = Math.max(0, originalLS);
-    try {
-      shape.letterSpacing = ls;
-    } catch (_) {}
+    // Penpot rejects letterSpacing of 0 with "Value not valid: 0".
+    if (ls > 0) {
+      try {
+        shape.letterSpacing = String(ls);
+      } catch (_) {}
+    }
   }
 
   const rawAlign = textItem.textAlign || "left";
@@ -642,12 +645,14 @@ function applyTextRuns(shape, textItem) {
       }
 
       if (run.fontSize) range.fontSize = String(run.fontSize);
-      // Clamp negative letterSpacing to 0 (Penpot rejects negatives).
+      // Penpot rejects both negative letterSpacing and 0 ("Value not valid: 0").
       if (run.letterSpacing !== undefined && run.letterSpacing !== null) {
         const rls = Math.max(0, Number(run.letterSpacing));
-        try {
-          range.letterSpacing = String(rls);
-        } catch (_) {}
+        if (rls > 0) {
+          try {
+            range.letterSpacing = String(rls);
+          } catch (_) {}
+        }
       }
 
       // Color per run via range.fills
