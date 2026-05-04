@@ -572,32 +572,10 @@
         }
       }
 
-      async function readClipboard() {
-        // Try the Clipboard API first (works in some plugin iframe contexts).
-        // If blocked by Permissions Policy, fall back to focusing the hidden
-        // textarea so the user can press Ctrl+V.
-        try {
-          const text = await navigator.clipboard.readText();
-          if (text) {
-            // Simulate a paste event with the clipboard text
-            const data = JSON.parse(text);
-            if (data?.format === "penpot-visual-fetch") {
-              updateCaptureUI(data);
-              clearStatus();
-              checkCaptureFonts(data);
-              setStatus('Capture loaded — click "Build in Penpot" to import.', "info");
-              return;
-            } else {
-              setStatus(
-                "Clipboard does not contain a Penpot Visual Fetch capture. Use the extension first.",
-                "error",
-              );
-              return;
-            }
-          }
-        } catch {
-          // Clipboard API blocked — fall back to native paste event
-        }
+      function readClipboard() {
+        // navigator.clipboard.readText() is blocked in Penpot's plugin iframe
+        // by Permissions Policy. Focus a hidden textarea so the browser routes
+        // the user's Ctrl+V through the native 'paste' event below.
         document.getElementById("pasteTarget").focus();
         if (!capture) {
           setStatus("Press Ctrl+V to paste your capture.", "info");
