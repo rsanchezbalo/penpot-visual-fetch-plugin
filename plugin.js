@@ -390,8 +390,13 @@ function applyTextFontAndColor(shape, textItem) {
       penpotFont.variants[0];
 
     // fontId first — everything else after (official Penpot guidance)
-    shape.fontId = penpotFont.fontId;
-    shape.fontFamily = penpotFont.fontFamily;
+    // Guard: fontId must be a non-empty string; the Penpot setter triggers async
+    // CLJS state machinery and throws an uncatchable RxJS error if given undefined.
+    const resolvedFontId = penpotFont.fontId;
+    if (typeof resolvedFontId === "string" && resolvedFontId) {
+      shape.fontId = resolvedFontId;
+    }
+    shape.fontFamily = penpotFont.fontFamily || fontFamily;
     if (variant) {
       shape.fontVariantId = variant.fontVariantId;
       shape.fontWeight = variant.fontWeight;
@@ -619,8 +624,13 @@ function applyTextRuns(shape, textItem) {
             penpotFont.variants.find((v) => v.fontWeight === runWeight) ||
             penpotFont.variants[0];
           // fontId first, then weight/style — per official Penpot guidance
-          range.fontId = penpotFont.fontId;
-          range.fontFamily = penpotFont.fontFamily;
+          // Guard: fontId must be a non-empty string; the Penpot setter triggers async
+          // CLJS state machinery and throws an uncatchable RxJS error if given undefined.
+          const runFontId = penpotFont.fontId;
+          if (typeof runFontId === "string" && runFontId) {
+            range.fontId = runFontId;
+          }
+          range.fontFamily = penpotFont.fontFamily || runFamily;
           if (variant) {
             range.fontVariantId = variant.fontVariantId;
             range.fontWeight = variant.fontWeight;
