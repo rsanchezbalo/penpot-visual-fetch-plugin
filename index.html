@@ -300,11 +300,8 @@
           <li>
             <span class="step-num">3</span>
             <span class="body-s" style="color: var(--foreground-secondary)">
-              Click
-              <strong style="color: var(--foreground-primary)"
-                >Paste from clipboard</strong
-              >
-              below (or press <kbd>Ctrl+V</kbd>) to import into Penpot
+              Click the area below, then press
+              <kbd>Ctrl+V</kbd> to paste and import into Penpot
             </span>
           </li>
         </ol>
@@ -330,7 +327,7 @@
         id="pasteArea"
         role="button"
         tabindex="0"
-          title="Click to paste from clipboard"
+          title="Click here, then press Ctrl+V"
       >
         <div class="paste-icon">
           <svg
@@ -358,7 +355,7 @@
           id="pasteLabel"
           style="color: var(--foreground-secondary); text-align: center"
         >
-          Click to paste from clipboard
+          Click here · then <kbd>Ctrl+V</kbd>
         </p>
         <p class="caption paste-meta" id="pasteMeta"></p>
       </div>
@@ -565,7 +562,7 @@
           btnClear.disabled = false;
         } else {
           pasteArea.classList.remove("has-data");
-          pasteLabel.textContent = "Click to paste from clipboard";
+          pasteLabel.innerHTML = "Click here &middot; then <kbd>Ctrl+V</kbd>";
           pasteMeta.textContent = "";
           btnBuild.disabled = true;
           btnClear.disabled = true;
@@ -578,7 +575,7 @@
         // the user's Ctrl+V through the native 'paste' event below.
         document.getElementById("pasteTarget").focus();
         if (!capture) {
-          setStatus("Press Ctrl+V to paste your capture.", "info");
+          setStatus("Now press Ctrl+V to paste your capture.", "info");
         }
       }
 
