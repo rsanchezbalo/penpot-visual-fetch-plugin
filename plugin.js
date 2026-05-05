@@ -316,6 +316,7 @@ function applyGridLayout(frame, layout) {
 // quoted names or inconsistent casing (e.g. "Work sans" vs "Work Sans").
 // This tries exact match first, then case-insensitive, then fontFamily field.
 function findFont(rawName) {
+  if (!rawName) return null;
   // Strip surrounding quotes (single, double, or typographic) that CSS may include
   const name = rawName
     .replace(
@@ -350,6 +351,25 @@ function findFont(rawName) {
   return null;
 }
 
+function normalizeFontFamily(rawName) {
+  if (!rawName) return "";
+  return String(rawName)
+    .replace(/["'\u2018\u2019\u201c\u201d]+/g, "")
+    .split(",")[0]
+    .trim();
+}
+
+function normalizeFontKey(rawName) {
+  return normalizeFontFamily(rawName).toLowerCase();
+}
+
+function getRequestedFontFamily(rawName) {
+  const normalized = normalizeFontFamily(rawName);
+  if (!normalized) return "";
+  const replaced = fontReplacementMap.get(normalizeFontKey(normalized));
+  return replaced || normalized;
+}
+
 function applyGridChildPlacement(shape, lc) {
   if (!lc) return;
   const cell = shape.layoutCell;
@@ -371,10 +391,10 @@ function applyGridChildPlacement(shape, lc) {
 // Per official Penpot sample: set fontId FIRST via direct property, then
 // fontStyle/fontWeight/fontSize AFTER.  Do NOT use applyToText().
 function applyTextFontAndColor(shape, textItem) {
-  const fontFamily = (textItem.fontFamily || "Source Sans Pro")
-    .replace(/["'\u2018\u2019\u201c\u201d]+/g, "")
-    .split(",")[0]
-    .trim();
+  const originalFontFamily = normalizeFontFamily(
+    textItem.fontFamily || "Source Sans Pro",
+  );
+  const fontFamily = getRequestedFontFamily(originalFontFamily);
   const fontWeight = String(textItem.fontWeight || "400");
   const isItalic = (textItem.fontStyle || "").toLowerCase().includes("italic");
 
@@ -409,7 +429,7 @@ function applyTextFontAndColor(shape, textItem) {
       } catch (_) {}
     }
   } else {
-    unresolvedFonts.add(fontFamily);
+    unresolvedFonts.add(originalFontFamily || fontFamily);
     // Try a fallback font so the shape gets a valid fontId
     const FALLBACK_FONTS = ["Inter", "Source Sans Pro", "Roboto"];
     let fallbackApplied = false;
@@ -606,10 +626,8 @@ function applyTextRuns(shape, textItem) {
 
       // Font per run — use direct range properties (fontId first, same pattern)
       if (run.fontFamily) {
-        const runFamily = run.fontFamily
-          .replace(/["']/g, "")
-          .split(",")[0]
-          .trim();
+        const runOriginalFamily = normalizeFontFamily(run.fontFamily);
+        const runFamily = getRequestedFontFamily(runOriginalFamily);
         const runWeight = String(run.fontWeight || "400");
         const runItalic = (run.fontStyle || "")
           .toLowerCase()
@@ -637,7 +655,7 @@ function applyTextRuns(shape, textItem) {
             range.fontStyle = variant.fontStyle || "normal";
           }
         } else {
-          unresolvedFonts.add(runFamily);
+          unresolvedFonts.add(runOriginalFamily || runFamily);
           range.fontFamily = runFamily;
           range.fontWeight = runWeight;
           try {
@@ -712,6 +730,7 @@ let totalNodes = 0;
 let processedNodes = 0;
 const mediaCache = new Map(); // url → MediaObject, avoid re-uploading same URL
 const unresolvedFonts = new Set(); // font families not found in Penpot's registry
+const fontReplacementMap = new Map(); // normalized missing font -> replacement family
 
 // UI-based timers (setTimeout doesn't reliably fire in the plugin sandbox)
 const pendingTimers = new Map(); // id → resolve(null)
@@ -1202,6 +1221,16 @@ async function buildFromCapture(capture, options) {
   processedNodes = 0;
   mediaCache.clear();
   unresolvedFonts.clear();
+  fontReplacementMap.clear();
+  for (const [fromFont, toFont] of Object.entries(
+    options?.fontReplacements || {},
+  )) {
+    const fromKey = normalizeFontKey(fromFont);
+    const toFamily = normalizeFontFamily(toFont);
+    if (fromKey && toFamily) {
+      fontReplacementMap.set(fromKey, toFamily);
+    }
+  }
   penpot.ui.sendMessage({ type: "progress", value: 0 });
 
   const page = penpot.currentPage;
@@ -1282,5 +1311,17 @@ penpot.ui.onMessage((msg) => {
       if (!findFont(name)) missing.push(name);
     }
     penpot.ui.sendMessage({ type: "fonts-checked", missing });
+  }
+  if (msg.type === "get-available-fonts") {
+    const fonts = [];
+    const seen = new Set();
+    for (const f of penpot.fonts.all || []) {
+      const family = (f && (f.fontFamily || f.name)) || "";
+      if (!family || seen.has(family)) continue;
+      seen.add(family);
+      fonts.push(family);
+    }
+    fonts.sort((a, b) => a.localeCompare(b));
+    penpot.ui.sendMessage({ type: "available-fonts", fonts });
   }
 });

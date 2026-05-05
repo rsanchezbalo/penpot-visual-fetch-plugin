@@ -33,6 +33,53 @@
         padding: var(--spacing-12);
       }
 
+      .instructions[hidden] {
+        display: none;
+      }
+
+      .instructions-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--spacing-8);
+      }
+
+      .instructions-header strong {
+        color: var(--foreground-primary);
+      }
+
+      .instructions-close {
+        border: 1px solid var(--background-quaternary);
+        background: var(--background-secondary);
+        color: var(--foreground-secondary);
+        border-radius: 6px;
+        width: 22px;
+        height: 22px;
+        line-height: 1;
+        font-size: 13px;
+        cursor: pointer;
+      }
+
+      .instructions-close:hover {
+        color: var(--foreground-primary);
+        border-color: var(--foreground-secondary);
+      }
+
+      .instructions-toggle {
+        border: 1px solid var(--background-quaternary);
+        background: transparent;
+        color: var(--foreground-secondary);
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 11px;
+        cursor: pointer;
+      }
+
+      .instructions-toggle:hover {
+        color: var(--foreground-primary);
+        border-color: var(--foreground-secondary);
+      }
+
       .instructions ol {
         list-style: none;
         display: flex;
@@ -119,10 +166,22 @@
         display: none;
         color: var(--accent-primary);
         text-align: center;
+        width: 100%;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        line-height: 1.35;
+        white-space: normal;
       }
 
       .paste-area.has-data .paste-meta {
         display: block;
+      }
+
+      .paste-label {
+        color: var(--foreground-secondary);
+        text-align: center;
+        width: 100%;
       }
 
       /* ── Actions ── */
@@ -215,10 +274,14 @@
           color-mix(in srgb, var(--warning-500) 30%, transparent);
         border-radius: 8px;
         padding: var(--spacing-8) var(--spacing-12);
-        color: var(--warning-500);
+        color: var(--foreground-secondary);
         display: none;
         flex-direction: column;
         gap: var(--spacing-8);
+      }
+
+      .font-warning strong {
+        color: var(--foreground-primary);
       }
 
       .font-warning.visible {
@@ -234,11 +297,69 @@
       }
 
       .font-warning ul li {
-        background: color-mix(in srgb, var(--warning-500) 15%, transparent);
+        background: var(--background-secondary);
+        border: 1px solid var(--background-quaternary);
         border-radius: 4px;
         padding: 1px 6px;
         font-family: monospace;
         font-size: 11px;
+        color: var(--foreground-primary);
+      }
+
+      .font-replace-controls {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-8);
+      }
+
+      .font-replace-row {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .font-replace-row select {
+        width: 100%;
+        box-sizing: border-box;
+        min-height: 36px;
+        border-radius: 10px;
+        border: 1px solid var(--background-quaternary);
+        background-color: var(--background-secondary);
+        color: var(--foreground-primary);
+        padding: 0 34px 0 12px;
+        font-size: 13px;
+        line-height: 1.2;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2396A0B5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        background-size: 14px 14px;
+        transition:
+          border-color 0.15s ease,
+          box-shadow 0.15s ease,
+          background-color 0.15s ease;
+      }
+
+      .font-replace-row select:hover {
+        border-color: color-mix(
+          in srgb,
+          var(--foreground-secondary) 35%,
+          var(--background-quaternary)
+        );
+      }
+
+      .font-replace-row select:focus {
+        outline: none;
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 0 2px
+          color-mix(in srgb, var(--accent-primary) 22%, transparent);
+      }
+
+      .font-replace-row select:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
       }
 
       /* ── Spinner ── */
@@ -278,7 +399,19 @@
     <!-- Content -->
     <div class="content">
       <!-- Instructions -->
-      <div class="instructions">
+      <div class="instructions" id="instructionsBox">
+        <div class="instructions-header">
+          <strong class="body-s">How to use</strong>
+          <button
+            type="button"
+            class="instructions-close"
+            id="btnHideInstructions"
+            aria-label="Hide instructions"
+            title="Hide instructions"
+          >
+            ×
+          </button>
+        </div>
         <ol>
           <li>
             <span class="step-num">1</span>
@@ -351,9 +484,8 @@
           </svg>
         </div>
         <p
-          class="body-s"
+          class="body-s paste-label"
           id="pasteLabel"
-          style="color: var(--foreground-secondary); text-align: center"
         >
           Click here · then <kbd>Ctrl+V</kbd>
         </p>
@@ -368,6 +500,7 @@
           fallback font will be used.</span
         >
         <ul id="fontWarningList"></ul>
+        <div class="font-replace-controls" id="fontReplaceControls"></div>
       </div>
 
       <!-- Options -->
@@ -454,6 +587,14 @@
 
     <!-- Footer -->
     <div class="footer">
+      <button
+        type="button"
+        class="instructions-toggle"
+        id="btnShowInstructions"
+        style="display: none"
+      >
+        Show instructions
+      </button>
       <span class="caption" style="color: var(--foreground-secondary)"
         >Extension + Penpot plugin</span
       >
@@ -487,8 +628,47 @@
       const statusMsg = document.getElementById("statusMsg");
       const fontWarning = document.getElementById("fontWarning");
       const fontWarningList = document.getElementById("fontWarningList");
+      const fontReplaceControls = document.getElementById("fontReplaceControls");
       const chkEnableFlex = document.getElementById("chkEnableFlex");
       const layoutWarning = document.getElementById("layoutWarning");
+      const instructionsBox = document.getElementById("instructionsBox");
+      const btnHideInstructions = document.getElementById("btnHideInstructions");
+      const btnShowInstructions = document.getElementById("btnShowInstructions");
+
+      const INSTRUCTIONS_PREF_KEY = "penpot-vf-hide-instructions-v1";
+      let availableFonts = [];
+      let currentMissingFonts = [];
+
+      function persistInstructionsPreference(hidden) {
+        try {
+          localStorage.setItem(INSTRUCTIONS_PREF_KEY, hidden ? "1" : "0");
+        } catch (_) {}
+      }
+
+      function isInstructionsHiddenByPreference() {
+        try {
+          return localStorage.getItem(INSTRUCTIONS_PREF_KEY) === "1";
+        } catch (_) {
+          return false;
+        }
+      }
+
+      function setInstructionsHidden(hidden) {
+        instructionsBox.hidden = hidden;
+        btnShowInstructions.style.display = hidden ? "inline-flex" : "none";
+      }
+
+      btnHideInstructions.addEventListener("click", () => {
+        setInstructionsHidden(true);
+        persistInstructionsPreference(true);
+      });
+
+      btnShowInstructions.addEventListener("click", () => {
+        setInstructionsHidden(false);
+        persistInstructionsPreference(false);
+      });
+
+      setInstructionsHidden(isInstructionsHiddenByPreference());
 
       chkEnableFlex.addEventListener("change", () => {
         layoutWarning.style.display = chkEnableFlex.checked ? "block" : "none";
@@ -503,6 +683,72 @@
         statusBox.className = "status";
         fontWarning.classList.remove("visible");
         fontWarningList.innerHTML = "";
+        fontReplaceControls.innerHTML = "";
+      }
+
+      function normalizeFontFamily(name) {
+        if (!name) return "";
+        return String(name).replace(/["']/g, "").split(",")[0].trim();
+      }
+
+      function renderFontWarning(missing) {
+        currentMissingFonts = (missing || []).map(normalizeFontFamily).filter(Boolean);
+
+        if (!currentMissingFonts.length) {
+          fontWarning.classList.remove("visible");
+          fontWarningList.innerHTML = "";
+          fontReplaceControls.innerHTML = "";
+          return;
+        }
+
+        fontWarning.classList.add("visible");
+        fontWarningList.innerHTML = currentMissingFonts.map((f) => `<li>${f}</li>`).join("");
+
+        const options = [...availableFonts];
+        fontReplaceControls.innerHTML = "";
+
+        for (const missingFont of currentMissingFonts) {
+          const row = document.createElement("div");
+          row.className = "font-replace-row";
+
+          const label = document.createElement("label");
+          label.className = "caption";
+          label.style.color = "var(--foreground-secondary)";
+          label.textContent = `Replace ${missingFont} with:`;
+
+          const select = document.createElement("select");
+          select.setAttribute("data-missing-font", missingFont);
+
+          const auto = document.createElement("option");
+          auto.value = "";
+          auto.textContent = "Automatic fallback";
+          select.appendChild(auto);
+
+          for (const family of options) {
+            const opt = document.createElement("option");
+            opt.value = family;
+            opt.textContent = family;
+            if (family.toLowerCase() === missingFont.toLowerCase()) {
+              opt.selected = true;
+            }
+            select.appendChild(opt);
+          }
+
+          row.appendChild(label);
+          row.appendChild(select);
+          fontReplaceControls.appendChild(row);
+        }
+      }
+
+      function getFontReplacements() {
+        const replacements = {};
+        const selects = fontReplaceControls.querySelectorAll("select[data-missing-font]");
+        for (const select of selects) {
+          const from = normalizeFontFamily(select.getAttribute("data-missing-font") || "");
+          const to = normalizeFontFamily(select.value || "");
+          if (from && to) replacements[from] = to;
+        }
+        return replacements;
       }
 
       // Extract all unique font family names from the capture tree
@@ -543,6 +789,14 @@
         progressPct.textContent = pct + "%";
       }
 
+      function truncateMiddle(value, maxLen = 56) {
+        const text = String(value || "");
+        if (text.length <= maxLen) return text;
+        const keepStart = Math.floor((maxLen - 3) * 0.7);
+        const keepEnd = maxLen - 3 - keepStart;
+        return text.slice(0, keepStart) + "..." + text.slice(text.length - keepEnd);
+      }
+
       function updateCaptureUI(snap) {
         capture = snap;
         if (snap) {
@@ -557,13 +811,18 @@
               ? `${Math.round(tree.w)}×${Math.round(tree.h)}px`
               : "";
           const name = tree?.name || "";
-          pasteMeta.textContent = [name, dim, ts].filter(Boolean).join(" · ");
+          const fullMeta = [name, dim, ts].filter(Boolean).join(" · ");
+          pasteMeta.textContent = [truncateMiddle(name), dim, ts]
+            .filter(Boolean)
+            .join(" · ");
+          pasteMeta.title = fullMeta;
           btnBuild.disabled = false;
           btnClear.disabled = false;
         } else {
           pasteArea.classList.remove("has-data");
           pasteLabel.innerHTML = "Click here &middot; then <kbd>Ctrl+V</kbd>";
           pasteMeta.textContent = "";
+          pasteMeta.title = "";
           btnBuild.disabled = true;
           btnClear.disabled = true;
         }
@@ -584,6 +843,10 @@
 
       function startBuild() {
         if (!capture || building) return;
+        const options = {
+          skipLayout: !document.getElementById("chkEnableFlex").checked,
+          fontReplacements: getFontReplacements(),
+        };
         building = true;
         document.body.classList.add("building");
         btnBuild.disabled = true;
@@ -595,10 +858,6 @@
         setProgress(0);
         progressLabel.textContent = "Building shapes…";
         clearStatus();
-
-        const options = {
-          skipLayout: !document.getElementById("chkEnableFlex").checked,
-        };
         window.parent.postMessage({ type: "build", capture, options }, "*");
       }
 
@@ -630,7 +889,7 @@
             clearStatus();
             checkCaptureFonts(data);
             setStatus(
-              'Capture loaded — click "Build in Penpot" to import.,',
+              'Capture loaded — click "Build in Penpot" to import.',
               "info",
             );
           } else {
@@ -684,25 +943,17 @@
           setTimeout(() => {
             progressSection.classList.remove("visible");
             stopBuilding("Done! Shapes created in Penpot.", "success");
-            if (data.missingFonts && data.missingFonts.length) {
-              fontWarningList.innerHTML = data.missingFonts
-                .map((f) => `<li>${f}</li>`)
-                .join("");
-              fontWarning.classList.add("visible");
-            }
+            renderFontWarning(data.missingFonts || []);
           }, 400);
         }
 
         if (data.type === "fonts-checked") {
-          if (data.missing && data.missing.length) {
-            fontWarningList.innerHTML = data.missing
-              .map((f) => `<li>${f}</li>`)
-              .join("");
-            fontWarning.classList.add("visible");
-          } else {
-            fontWarning.classList.remove("visible");
-            fontWarningList.innerHTML = "";
-          }
+          renderFontWarning(data.missing || []);
+        }
+
+        if (data.type === "available-fonts") {
+          availableFonts = Array.isArray(data.fonts) ? data.fonts : [];
+          renderFontWarning(currentMissingFonts);
         }
 
         if (data.type === "error") {
@@ -733,6 +984,7 @@
       // Notify plugin.js that the UI is ready to receive messages.
       // plugin.js will reply with { type: "theme", content: "dark"|"light" }.
       window.parent.postMessage({ type: "ready" }, "*");
+      window.parent.postMessage({ type: "get-available-fonts" }, "*");
     </script>
   </body>
 </html>
